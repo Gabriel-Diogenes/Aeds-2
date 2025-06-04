@@ -85,9 +85,9 @@ public class Shows implements Cloneable {
 
     // Método clone
     @Override
-    public Shows clone() {
+    public Lista clone() {
         try {
-            Shows copy = (Shows) super.clone();
+            Lista copy = (Lista) super.clone();
             copy.cast = cast.clone();
             copy.listed_in = listed_in.clone();
             return copy;
@@ -107,10 +107,10 @@ public class Shows implements Cloneable {
     }
 
     // Método ler
-    public static Shows ler(String linha) {
+    public static Lista ler(String linha) {
         String[] campos = dividirLinhaCSV(linha);
 
-        Shows show = new Shows();
+        Lista show = new Lista();
         show.setShow_id(valorOuNaN(campos, 0));
         show.setType(valorOuNaN(campos, 1));
         show.setTitle(valorOuNaN(campos, 2));
@@ -167,7 +167,7 @@ public class Shows implements Cloneable {
         return campos.toArray(new String[0]);
     }
 
-    public static void ordenarPorCountingSort(List<Shows> lista) throws IOException {
+    public static void ordenarPorCountingSort(List<Lista> lista) throws IOException {
         long inicio = System.nanoTime();
         final int[] comparacoes = {0};
         int movimentacoes = 0;
@@ -177,7 +177,7 @@ public class Shows implements Cloneable {
         int minAno = Integer.MAX_VALUE;
         int maxAno = Integer.MIN_VALUE;
     
-        for (Shows s : lista) {
+        for (Lista s : lista) {
             int ano = s.getRelease_year();
             if (ano < minAno) minAno = ano;
             if (ano > maxAno) maxAno = ano;
@@ -185,17 +185,17 @@ public class Shows implements Cloneable {
     
         int range = maxAno - minAno + 1;
     
-        List<List<Shows>> buckets = new ArrayList<>(range);
+        List<List<Lista>> buckets = new ArrayList<>(range);
         for (int i = 0; i < range; i++) {
             buckets.add(new ArrayList<>());
         }
     
-        for (Shows s : lista) {
+        for (Lista s : lista) {
             buckets.get(s.getRelease_year() - minAno).add(s);
             movimentacoes++;
         }
 
-        for (List<Shows> bucket : buckets) {
+        for (List<Lista> bucket : buckets) {
             bucket.sort((a, b) -> {
                 comparacoes[0]++;
                 return a.getTitle().toLowerCase().compareTo(b.getTitle().toLowerCase());
@@ -203,8 +203,8 @@ public class Shows implements Cloneable {
         }
     
         int idx = 0;
-        for (List<Shows> bucket : buckets) {
-            for (Shows s : bucket) {
+        for (List<Lista> bucket : buckets) {
+            for (Lista s : bucket) {
                 lista.set(idx++, s);
                 movimentacoes++;
             }
@@ -231,20 +231,20 @@ public class Shows implements Cloneable {
         }
         br.close();
     
-        List<Shows> lista = new ArrayList<>();
+        List<Lista> lista = new ArrayList<>();
         while (sc.hasNext()) {
             String entrada = sc.nextLine();
             if (entrada.equals("FIM")) break;
     
             if (mapaCsv.containsKey(entrada)) {
-                Shows show = Shows.ler(mapaCsv.get(entrada));
+                Lista show = Lista.ler(mapaCsv.get(entrada));
                 lista.add(show);
             }
         }
     
         ordenarPorCountingSort(lista);
     
-        for (Shows show : lista) {
+        for (Lista show : lista) {
             show.imprimir();
         }
     
