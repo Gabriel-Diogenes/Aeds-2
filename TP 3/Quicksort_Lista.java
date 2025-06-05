@@ -2,35 +2,6 @@ import java.io.*;
 import java.text.*;
 import java.util.*;
 
-class PilhaShows {
-    private Shows[] array;
-    private int n;
-
-    public PilhaShows(int capacidade) {
-        array = new Shows[capacidade];
-        n = 0;
-    }
-
-    public void inserir(Shows s) throws Exception {
-        if (n >= array.length) throw new Exception("Lista cheia");
-        array[n++] = s;
-    }
-
-
-    public Shows remover() throws Exception {
-        if (n == 0) throw new Exception("Lista vazia");
-        return array[--n];
-    }
-
-
-   public void mostrar() {
-    for (int i = n - 1; i >= 0; i--) {
-        array[i].imprimir(i);
-    }
-}
-
-}
-
 public class Shows implements Cloneable {
     private String show_id;
     private String type;
@@ -46,7 +17,8 @@ public class Shows implements Cloneable {
 
     private static final SimpleDateFormat sdf = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
 
-    // Construtor vazio
+    private static long comparacoes = 0;
+
     public Shows() {
         this.show_id = "NaN";
         this.type = "NaN";
@@ -61,7 +33,6 @@ public class Shows implements Cloneable {
         this.listed_in = new String[]{"NaN"};
     }
 
-    // Construtor com parâmetros
     public Shows(String show_id, String type, String title, String director, String[] cast,
                  String country, Date date_added, int release_year, String rating,
                  String duration, String[] listed_in) {
@@ -78,7 +49,6 @@ public class Shows implements Cloneable {
         this.listed_in = listed_in;
     }
 
-    // Getters e setters
     public String getShow_id() { return show_id; }
     public void setShow_id(String show_id) { this.show_id = show_id; }
 
@@ -112,7 +82,6 @@ public class Shows implements Cloneable {
     public String[] getListed_in() { return listed_in; }
     public void setListed_in(String[] listed_in) { this.listed_in = listed_in; }
 
-    // Método clone
     @Override
     public Shows clone() {
         try {
@@ -124,18 +93,16 @@ public class Shows implements Cloneable {
             return null;
         }
     }
-    
-    // Método imprimir
-    public void imprimir(int contador) {
+
+    public void imprimir() {
         Arrays.sort(cast);
-        System.out.print("[" + contador + "]" + " => " + show_id + " ## " + title + " ## " + type + " ## " + director + " ## ");
+        System.out.print("=> " + show_id + " ## " + title + " ## " + type + " ## " + director + " ## ");
         System.out.print(Arrays.toString(cast) + " ## " + country + " ## ");
         System.out.print((date_added != null ? sdf.format(date_added) : "NaN") + " ## ");
         System.out.print(release_year + " ## " + rating + " ## " + duration + " ## ");
         System.out.println(Arrays.toString(listed_in) + " ##");
     }
 
-    // Método ler
     public static Shows ler(String linha) {
         String[] campos = dividirLinhaCSV(linha);
 
@@ -196,59 +163,128 @@ public class Shows implements Cloneable {
         return campos.toArray(new String[0]);
     }
 
-    // Método main
-   public static void main(String[] args) throws Exception {
-    Scanner sc = new Scanner(System.in);
-    Map<String, String> mapaCsv = new HashMap<>();
-    int contador = 1;
+    private static int compararShows(Shows a, Shows b) {
+    comparacoes++;
 
-    BufferedReader br = new BufferedReader(new FileReader("/tmp/disneyplus.csv"));
-    String linha = br.readLine(); // cabeçalho
-    while ((linha = br.readLine()) != null) {
-        String id = linha.split(",", 2)[0];
-        mapaCsv.put(id, linha);
+    if (a.getDate_added() == null && b.getDate_added() == null) {
+        return a.getTitle().compareToIgnoreCase(b.getTitle());
     }
-    br.close();
+    if (a.getDate_added() == null) return 1;
+    if (b.getDate_added() == null) return -1;
 
-    PilhaShows pilha = new PilhaShows(1000);
+    int compData = a.getDate_added().compareTo(b.getDate_added());
+    if (compData != 0) return compData;
 
-    // Leitura dos IDs iniciais
-    while (sc.hasNext()) {
-        String entrada = sc.nextLine();
-        if (entrada.equals("FIM")) break;
-
-        if (mapaCsv.containsKey(entrada)) {
-            Shows show = Shows.ler(mapaCsv.get(entrada));
-            pilha.inserir(show);
-            contador++;
-        }
-    }
-
-    int numComandos = Integer.parseInt(sc.nextLine());
-    for (int i = 0; i < numComandos; i++) {
-        String linhaComando = sc.nextLine();
-        String[] partes = linhaComando.split(" ");
-
-        switch (partes[0]) {
-         
-            case "I": {
-                String id = partes[1];
-                Shows show = Shows.ler(mapaCsv.get(id));
-                pilha.inserir(show);
-                break;
-            }
-         
-            case "R": {
-                Shows removido = pilha.remover();
-
-                System.out.println("(R) " + removido.getTitle());
-                break;
-            }
-    
-        }
-    }
-
-    pilha.mostrar();
-    sc.close();
+    return a.getTitle().compareToIgnoreCase(b.getTitle());
 }
+
+    static class No {
+        Shows dado;
+        No anterior, proximo;
+
+        No(Shows dado) {
+            this.dado = dado;
+            this.anterior = null;
+            this.proximo = null;
+        }
+    }
+
+    static class ListaDuplamenteEncadeada {
+        No cabeca, cauda;
+
+        public void adicionarFinal(Shows dado) {
+            No novoNo = new No(dado);
+            if (cabeca == null) {
+                cabeca = cauda = novoNo;
+            } else {
+                cauda.proximo = novoNo;
+                novoNo.anterior = cauda;
+                cauda = novoNo;
+            }
+        }
+
+        public No getUltimoNo() {
+            return cauda;
+        }
+
+        public void imprimirLista() {
+            No atual = cabeca;
+            while (atual != null) {
+                atual.dado.imprimir();
+                atual = atual.proximo;
+            }
+        }
+    }
+
+    public static void quicksort(No inicio, No fim) {
+        if (fim != null && inicio != fim && inicio != fim.proximo) {
+            No pivo = particao(inicio, fim);
+            quicksort(inicio, pivo.anterior);
+            quicksort(pivo.proximo, fim);
+        }
+    }
+
+    private static No particao(No inicio, No fim) {
+        Shows pivo = fim.dado;
+        No i = inicio.anterior;
+
+        for (No j = inicio; j != fim; j = j.proximo) {
+                if (compararShows(j.dado, pivo) < 0){
+                    i = (i == null) ? inicio : i.proximo;
+                    swap(i, j);
+            }
+        }
+        i = (i == null) ? inicio : i.proximo;
+        swap(i, fim);
+        return i;
+    }
+
+    private static void swap(No a, No b) {
+        Shows temp = a.dado;
+        a.dado = b.dado;
+        b.dado = temp;
+    }
+
+    public static void gravarLog(String matricula, long tempo, long comparacoes) {
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter("692997_quicksort3.txt"));
+            bw.write(matricula + "\t" + tempo + "\t" + comparacoes + "\n");
+            bw.close();
+        } catch (IOException e) {
+            System.err.println("Erro ao gravar o arquivo de log: " + e.getMessage());
+        }
+    }
+    public static void main(String[] args) throws Exception {
+        Scanner sc = new Scanner(System.in);
+        Map<String, String> mapaCsv = new HashMap<>();
+
+        BufferedReader br = new BufferedReader(new FileReader("/tmp/disneyplus.csv"));
+        String linha = br.readLine(); // cabeçalho
+        while ((linha = br.readLine()) != null) {
+            String id = linha.split(",", 2)[0];
+            mapaCsv.put(id, linha);
+        }
+        br.close();
+
+        ListaDuplamenteEncadeada lista = new ListaDuplamenteEncadeada();
+
+        while (sc.hasNext()) {
+            String entrada = sc.nextLine();
+            if (entrada.equals("FIM"))
+                break;
+            if (mapaCsv.containsKey(entrada)) {
+                lista.adicionarFinal(ler(mapaCsv.get(entrada)));
+            }
+        }
+        sc.close();
+
+        long inicio = System.currentTimeMillis();
+        comparacoes = 0; // resetar contador
+        quicksort(lista.cabeca, lista.cauda);
+        long fim = System.currentTimeMillis();
+
+        lista.imprimirLista();
+
+        gravarLog("692997", fim - inicio, comparacoes);
+    }
 }
